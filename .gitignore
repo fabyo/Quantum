@@ -1,0 +1,22 @@
+# Arquivo .gitignore raiz para o monorepo Quantum
+
+### Geral ###
+.DS_Store
+.idea/
+
+### Backend (Laravel) ###
+/backend/vendor/
+/backend/node_modules/
+/backend/.env
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/framework/cache/data/*
+/backend/storage/logs/*.log
+/backend/public/hot
+/backend/public/build/
+
+### Frontend (Vue/Vite) ###
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env*
+!/frontend/.env.example
