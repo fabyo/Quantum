@@ -1,45 +1,45 @@
-# Quantum Monorepo – Laravel + Vue + Hexagonal
+# Quantum Monorepo – Laravel + Vue + Hexagonal Architecture
 
 <img src="quantum.png" alt="Golang" width="200" />
 
-Este repositório reúne **backend (Laravel)** e **frontend (Vue)** em um único monorepo, com foco em:
+This repository brings together a **Laravel backend** and a **Vue frontend** in a single monorepo, with a strong focus on:
 
-- Arquitetura Hexagonal / Clean Architecture
-- Testes bem estruturados (Feature + Unit)
-- Autenticação SPA com Laravel Sanctum
-- Integração suave entre API e frontend Vue 3
+- Hexagonal / Clean Architecture
+- Well-structured automated tests (Feature + Unit)
+- SPA authentication with Laravel Sanctum
+- Smooth integration between the API and a Vue 3 frontend
 
 ---
 
-## 🏗️ Estrutura: Monorepo
+## 🏗️ Project Structure: Monorepo
 
-O primeiro conceito definido foi a **estrutura do projeto**.
+The first key decision was the **project structure**.
 
-- **Monorepo:** em vez de dois repositórios separados, utilizamos um único repositório no GitHub (`Quantum`).
-- **Organização de pastas:**
+- **Monorepo:** instead of two separate repositories, we use a single GitHub repository (`Quantum`).
+- **Folder layout:**
 
   ```text
-  /backend   # Projeto Laravel (API)
-  /frontend  # Projeto Vue 3 (SPA)
+  /backend   # Laravel project (API)
+  /frontend  # Vue 3 project (SPA)
   ```
 
-- **.gitignore único na raiz:** um único arquivo `.gitignore` gerencia o que deve ser ignorado para **ambos** os projetos:
+- **Single `.gitignore` at the root:** one `.gitignore` file controls what should be ignored for **both** projects:
 
   - `.env`
   - `vendor/`
   - `node_modules/`
 
-Isso simplifica o versionamento e mantém o controle centralizado dos artefatos que não devem subir para o Git.
+This keeps version control simple and centralizes the configuration of files that must not be committed.
 
 ---
 
-## 🚀 Backend – Laravel + Arquitetura Hexagonal
+## 🚀 Backend – Laravel + Hexagonal Architecture
 
-A parte mais pesada do trabalho ficou no backend, com foco em **arquitetura** e **testes**.
+Most of the heavy lifting is on the backend side, focused on **architecture** and **testing**.
 
-### Visão Geral da Arquitetura
+### High-Level Architecture
 
-Adotamos **Arquitetura Hexagonal (Clean Architecture)** para isolar a **lógica de negócio** do framework.
+We adopted **Hexagonal Architecture (Clean Architecture)** to isolate **business logic** from the framework.
 
 ```text
 backend/
@@ -54,9 +54,9 @@ backend/
         └── Http/Controllers/
 ```
 
-#### `app/Domain` – O Núcleo (PHP puro)
+#### `app/Domain` – The Core (Pure PHP)
 
-- **Entidades:** classes simples (POPOs) que representam os dados de domínio, por exemplo:
+- **Entities:** simple classes (POPOs) representing domain data, for example:
 
   ```php
   // app/Domain/Entities/Product.php
@@ -69,9 +69,9 @@ backend/
   }
   ```
 
-  Sem `extends Model`, sem dependência de Eloquent ou Laravel.
+  No `extends Model`, no Eloquent, no Laravel dependencies.
 
-- **Interfaces:** contratos que definem o que o “mundo exterior” deve fazer:
+- **Interfaces:** contracts describing what the “outside world” must provide:
 
   ```php
   // app/Domain/Interfaces/ProductRepositoryInterface.php
@@ -81,9 +81,9 @@ backend/
   }
   ```
 
-#### `app/Application` – Casos de Uso
+#### `app/Application` – Use Cases
 
-- **Use Cases:** orquestram a lógica de negócio, dependendo apenas das Interfaces do domínio:
+- **Use Cases:** orchestrate business logic and depend only on domain interfaces:
 
   ```php
   // app/Application/UseCases/CreateProductUseCase.php
@@ -102,13 +102,13 @@ backend/
   }
   ```
 
-Nenhuma dependência direta de Eloquent, Request, Response ou qualquer detalhe de infraestrutura.
+No direct dependencies on Eloquent, HTTP requests, responses, or any infrastructure detail.
 
-#### `app/Infrastructure` – O “Mundo Real”
+#### `app/Infrastructure` – The Real World
 
-Aqui o Laravel aparece de verdade.
+Here is where Laravel comes in.
 
-- **Repositórios Eloquent:** implementam as interfaces do domínio usando Eloquent:
+- **Eloquent Repositories:** concrete implementations of domain interfaces using Eloquent:
 
   ```php
   // app/Infrastructure/Repositories/EloquentProductRepository.php
@@ -126,9 +126,9 @@ Aqui o Laravel aparece de verdade.
   }
   ```
 
-- **Models Eloquent:** vivem em `App\Models` (por exemplo, `App\Models\Product`).
+- **Eloquent Models:** live under `App\Models` (for example, `App\Models\Product`).
 
-- **Controllers:** atuam como adaptadores finos, recebendo o Request, chamando o Use Case e devolvendo um Response:
+- **Controllers:** thin adapters that receive the request, call the use case, and return the response:
 
   ```php
   // app/Http/Controllers/ProductController.php
@@ -146,55 +146,55 @@ Aqui o Laravel aparece de verdade.
   }
   ```
 
-### Autenticação – Laravel Sanctum
+### Authentication – Laravel Sanctum
 
-A autenticação da SPA é feita com **Laravel Sanctum**, usando **sessões e cookies httpOnly**, sem guardar token em `localStorage`.
+SPA authentication is handled by **Laravel Sanctum**, using **sessions and httpOnly cookies**, instead of storing tokens in `localStorage`.
 
-- Segurança maior contra XSS.
-- Compatível com chamadas via `Axios` usando `withCredentials: true` no frontend.
+- Stronger protection against XSS.
+- Fully compatible with Axios calls using `withCredentials: true` in the frontend.
 
-### Registro de Rotas (Erro 404 Clássico)
+### Route Registration (The Classic 404)
 
-Instalações modernas e mais “minimalistas” do Laravel **não registram** `routes/api.php` automaticamente.
+Modern, more “minimal” Laravel installations do **not** automatically register `routes/api.php`.
 
-- Resultado: chamadas para `/api/...` retornando `404`, mesmo com rotas definidas no arquivo.
+- Result: calls to `/api/...` return `404`, even though the routes exist in `routes/api.php`.
 
-**Solução:** garantir o registro das rotas no `bootstrap/app.php` via `withRouting()`:
+**Fix:** ensure the routes are registered in `bootstrap/app.php` using `withRouting()`:
 
 ```php
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php', // <- ESSA LINHA É FUNDAMENTAL
+        api: __DIR__.'/../routes/api.php', // <- THIS LINE IS CRITICAL
         // ...
     )
     ->create();
 ```
 
-A partir daí, rotas definidas em `routes/api.php` passam a responder corretamente em `/api/...`.
+From there on, routes defined in `routes/api.php` will respond correctly under the `/api/...` prefix.
 
 ---
 
-## 🧪 Estratégia de Testes (PHPUnit)
+## 🧪 Testing Strategy (PHPUnit)
 
-A qualidade do backend foi garantida com uma abordagem em duas camadas:
+Backend quality is enforced through two main testing layers:
 
-- **Testes de Feature** – fluxo de ponta a ponta (HTTP → Banco)
-- **Testes Unitários** – lógica de negócio isolada (Use Cases)
+- **Feature Tests** – end-to-end flow (HTTP → Database)
+- **Unit Tests** – isolated business logic (Use Cases)
 
-### Testes de Feature – `tests/Feature`
+### Feature Tests – `tests/Feature`
 
-Objetivo: validar o fluxo **“de fora para dentro”**.
+Goal: validate the flow **“from the outside in”**.
 
-Ferramentas principais:
+Key tools:
 
-- `use RefreshDatabase;` – banco limpo a cada teste (incluindo uso de `:memory:` no `.env.testing`).
-- `Sanctum::actingAs($user);` – para simular usuário autenticado.
-- `$this->postJson(...)` – simulação de requisições HTTP reais.
-- `assertStatus(201)` – checagem do status HTTP.
-- `assertDatabaseHas(...)` – verificação se o dado realmente foi salvo.
+- `use RefreshDatabase;` – clean database for each test (including `:memory:` for `.env.testing`).
+- `Sanctum::actingAs($user);` – simulate an authenticated user.
+- `$this->postJson(...)` – simulate real HTTP requests.
+- `assertStatus(201)` – assert HTTP status codes.
+- `assertDatabaseHas(...)` – assert that data was actually persisted.
 
-Exemplo simplificado:
+Example:
 
 ```php
 public function test_an_authenticated_user_can_create_a_product(): void
@@ -214,22 +214,22 @@ public function test_an_authenticated_user_can_create_a_product(): void
 }
 ```
 
-Durante o desenvolvimento, os testes ajudaram a encontrar erros como:
+During development, feature tests helped catch issues such as:
 
-- `404` – rota de API não registrada no `bootstrap/app.php`.
-- `500` – classes faltando (`CreateProductRequest`, `Product` Model etc.).
-- `401` – ausência ou configuração incorreta de middleware de autenticação.
+- `404` – API routes not registered in `bootstrap/app.php`.
+- `500` – missing classes (`CreateProductRequest`, `Product` model, etc.).
+- `401` – missing or misconfigured authentication middleware.
 
-### Testes Unitários – `tests/Unit`
+### Unit Tests – `tests/Unit`
 
-Objetivo: testar **lógica de negócio** (Use Cases) sem tocar em banco ou framework.
+Goal: test **business logic** (Use Cases) without touching the database or framework.
 
-Ferramentas:
+Tools:
 
-- **Mockery** – para criar mocks de `ProductRepositoryInterface`.
-- **Isolamento total** – o use case acha que está falando com um repositório real, mas é apenas um mock.
+- **Mockery** – to create mocks for `ProductRepositoryInterface`.
+- **Full isolation** – the use case believes it talks to a repository, but it’s just a mock.
 
-Exemplo:
+Example:
 
 ```php
 public function test_create_product_use_case_uses_repository(): void
@@ -249,31 +249,31 @@ public function test_create_product_use_case_uses_repository(): void
 }
 ```
 
-Aqui detectamos, por exemplo, problemas de diferença de tipos (`float 100.0` vs inteiro `100`) gerando `NoMatchingExpectationException` no Mockery.
+This is where we caught issues such as type mismatches (`float 100.0` vs integer `100`) triggering `NoMatchingExpectationException` in Mockery.
 
 ---
 
 ## 🎨 Frontend – Vue 3 + Vite
 
-O frontend foi construído em **Vue 3**, com build e dev server fornecidos pelo **Vite**.
+The frontend is built on **Vue 3**, with build and dev server provided by **Vite**.
 
-### Stack Principal
+### Stack Overview
 
 - **Framework:** Vue 3 (Composition API)
 - **Build / Dev:** Vite (`npm run dev`)
-- **Estado Global:** Pinia
-- **Roteamento:** Vue Router
+- **Global State:** Pinia
+- **Routing:** Vue Router
 - **HTTP Client:** Axios
 
-### Gerenciamento de Estado – Pinia
+### State Management – Pinia
 
-Criamos um `authStore` responsável por:
+We use an `authStore` responsible for:
 
-- Guardar o usuário autenticado (`user`).
-- Expor um flag `isLoggedIn`.
-- Lidar com login, logout e carregamento de sessão.
+- Keeping the authenticated user (`user`).
+- Exposing a `isLoggedIn` flag.
+- Handling login, logout and session loading.
 
-Exemplo de ideia geral:
+Example concept:
 
 ```ts
 // frontend/src/stores/auth.ts
@@ -292,9 +292,9 @@ export const useAuthStore = defineStore('auth', {
 });
 ```
 
-### Roteamento – Vue Router + Navigation Guards
+### Routing – Vue Router + Navigation Guards
 
-Utilizamos **navigation guards** (`beforeEach`) para proteger rotas autenticadas:
+We protect private routes using **navigation guards** (`beforeEach`):
 
 ```ts
 router.beforeEach((to, from, next) => {
@@ -308,24 +308,24 @@ router.beforeEach((to, from, next) => {
 });
 ```
 
-Rotas como `/dashboard` só são acessíveis se o usuário estiver autenticado.
+Routes such as `/dashboard` are only accessible when the user is authenticated.
 
-### Comunicação com a API – Axios + Cookies Sanctum
+### API Communication – Axios + Sanctum Cookies
 
-Para que o Sanctum funcione corretamente, configuramos o Axios com:
+To make Sanctum work properly, Axios is configured as follows:
 
 ```ts
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // envia cookies de sessão
+  withCredentials: true, // send session cookies
 });
 ```
 
-Também configuramos **interceptors** para:
+We also define **interceptors** to:
 
-- Capturar erros `401` vindos da API.
-- Disparar automaticamente o logout no Pinia.
-- Redirecionar o usuário para a tela de login quando a sessão expira.
+- Catch `401` errors returned by the API.
+- Automatically trigger Pinia’s logout action.
+- Redirect to the login page when the session expires.
 
 ```ts
 api.interceptors.response.use(
@@ -345,7 +345,7 @@ api.interceptors.response.use(
 
 ---
 
-## ▶️ Como Rodar o Projeto
+## ▶️ Getting Started
 
 ### Backend (Laravel)
 
@@ -353,7 +353,7 @@ api.interceptors.response.use(
 cd backend
 
 cp .env.example .env
-# configurar banco, APP_URL etc.
+# configure database, APP_URL, etc.
 
 composer install
 php artisan key:generate
@@ -368,7 +368,7 @@ php artisan serve
 cd frontend
 
 cp .env.example .env
-# configurar VITE_API_URL apontando para o backend
+# configure VITE_API_URL pointing to the backend
 
 npm install
 npm run dev
@@ -376,13 +376,13 @@ npm run dev
 
 ---
 
-## ✅ Objetivo Final
+## ✅ Project Goals
 
-Este monorepo foi pensado para ser um **exemplo prático e moderno** de:
+This monorepo is meant to be a **modern, practical example** of:
 
-- Como organizar um monorepo **Laravel + Vue**.
-- Como aplicar **Arquitetura Hexagonal** em Laravel sem gambiarras.
-- Como estruturar testes de forma saudável (Feature + Unit).
-- Como integrar uma SPA Vue 3 com backend Laravel usando **Sanctum + cookies seguros**.
+- How to structure a **Laravel + Vue** monorepo.
+- How to apply **Hexagonal Architecture** in Laravel without hacks.
+- How to organize a healthy test suite (Feature + Unit).
+- How to integrate a Vue 3 SPA with a Laravel backend using **Sanctum + secure cookies**.
 
-Sinta-se livre para clonar, estudar, adaptar e evoluir esta base para seus próprios projetos.
+Feel free to clone, explore, adapt, and evolve this codebase for your own projects.
