@@ -1,5 +1,7 @@
 # Quantum Monorepo – Laravel + Vue + Hexagonal
 
+<img src="quantum.png" alt="Golang" width="200" />
+
 Este repositório reúne **backend (Laravel)** e **frontend (Vue)** em um único monorepo, com foco em:
 
 - Arquitetura Hexagonal / Clean Architecture
